@@ -38,11 +38,13 @@ def mongo_import(client: pymongo.MongoClient, fname: str, del_db: bool = False, 
                 else:
                     # if the collection already exists, skip it
                     if cname in db.collection_names():
-                        print("\t{} already exists, skipping".format(cname))
-                        continue
-                log(verbose, "\tCreating collection:", cname)
-                log(verbose, "\t\tOptions", c['options'])
-                collection = db.create_collection(cname, **c['options'])
+                        print("\t{} already exists, skip creating".format(cname))
+                        collection = db.get_collection(cname)
+                    else:
+                        log(verbose, "\tCreating collection:", cname)
+                        log(verbose, "\t\tOptions", c['options'])
+                        collection = db.create_collection(
+                            cname, **c['options'])
                 for i in c['indexes']:
                     log(verbose, "\t\tCreating index:", i)
                     keys = [tuple(x) for x in i['keys']]
@@ -51,19 +53,28 @@ def mongo_import(client: pymongo.MongoClient, fname: str, del_db: bool = False, 
 
 
 def main(argv=sys.argv):
-    parser = argparse.ArgumentParser(description="Import a schema for database")
+    parser = argparse.ArgumentParser(
+        description="Import a schema for database")
     parser.add_argument('--uri', metavar='uri', type=str,
                         help='Full uri, use in place of server/port/user/auth_db, eg: mongodb://user:pass@example.com:port/auth_db')
-    parser.add_argument("--host", metavar='h', type=str, help='Server host', default='localhost')
-    parser.add_argument("--port", metavar='p', type=int, help='Server port', default=27017)
-    parser.add_argument('--username', metavar='u', type=str, help='Username', default='')
-    parser.add_argument('--password', metavar='pwd', type=str, help='Username', default='')
-    parser.add_argument('--authSource', metavar='a', type=str, help='DB to auth against', default='admin')
-    parser.add_argument('--file', metavar='f', type=str, help='Path to exported .json file', default='config.json')
-    parser.add_argument('--delete-db', action='store_true', help='Delete existing database if it exist', )
+    parser.add_argument("--host", metavar='h', type=str,
+                        help='Server host', default='localhost')
+    parser.add_argument("--port", metavar='p', type=int,
+                        help='Server port', default=27017)
+    parser.add_argument('--username', metavar='u',
+                        type=str, help='Username', default='')
+    parser.add_argument('--password', metavar='pwd',
+                        type=str, help='Username', default='')
+    parser.add_argument('--authSource', metavar='a', type=str,
+                        help='DB to auth against', default='admin')
+    parser.add_argument('--file', metavar='f', type=str,
+                        help='Path to exported .json file', default='config.json')
+    parser.add_argument('--delete-db', action='store_true',
+                        help='Delete existing database if it exist', )
     parser.add_argument('--delete-col', action='store_true',
                         help='Delete existing collections if they exist')
-    parser.add_argument('--verbose', action='store_true', help='Display verbose output')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Display verbose output')
     parser.add_argument('--databases', metavar='db', type=str,
                         help='Select databases from the config json to insert, default is all of them', default='*')
     args = parser.parse_args(argv[1:])
@@ -75,7 +86,8 @@ def main(argv=sys.argv):
             if hasattr(args, i):
                 client_args[i] = getattr(args, i)
         _client = pymongo.MongoClient(**client_args)
-    mongo_import(_client, args.file, args.delete_db, args.delete_col, args.databases, args.verbose)
+    mongo_import(_client, args.file, args.delete_db,
+                 args.delete_col, args.databases, args.verbose)
 
 
 if __name__ == "__main__":
